@@ -1,11 +1,16 @@
 """Say What Actually Broke — entry writer.
 
-Writes the single-line error message to /output/entry.txt and to
-entry.txt next to this file. Python standard library only; no network,
-no randomness, no clock. Fully deterministic.
+Writes the single-line error message to /output/entry.txt and, on a
+best-effort basis, to entry.txt next to this file. The /output write
+is strict (any failure fails the program); the local copy is only a
+convenience for local runs, because the grader mounts the repo
+read-only and a failed local write must not fail the run. Python
+standard library only; no network, no randomness, no clock.
+Fully deterministic.
 """
 
 import os
+import sys
 
 ENTRY = (
     "Nothing you did broke this. Our server ran out of disk at 3 a.m. "
@@ -47,7 +52,13 @@ def main():
     validate_entry()
     here = os.path.dirname(os.path.abspath(__file__))
     write_entry("/output/entry.txt")
-    write_entry(os.path.join(here, "entry.txt"))
+    # Local copy is best-effort only: the grader mounts the repo
+    # read-only, so a failed local write must not fail the run.
+    try:
+        write_entry(os.path.join(here, "entry.txt"))
+    except OSError as exc:
+        print("warning: could not write local entry.txt: %s" % exc,
+              file=sys.stderr)
 
 
 if __name__ == "__main__":
